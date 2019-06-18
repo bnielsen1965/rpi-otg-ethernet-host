@@ -30,7 +30,6 @@ ENDOFMESSAGE
 function Die()
 {
   echo "$*"
-  Usage
   exit 1
 }
 
@@ -79,7 +78,8 @@ EOF
 OTG_SUBNET="$1"
 
 if [ -z "$OTG_SUBNET" ]; then
-  Die "Subnet required."
+  echo "Subnet required."
+  Usage
 fi
 
 # make sure script runs from script's path
