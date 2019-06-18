@@ -82,7 +82,12 @@ if [ -z "$OTG_SUBNET" ]; then
   Die "Subnet required."
 fi
 
-InstallDHCPServer
-SetOTGMode "$OTG_MODE"
-SetDHCPServer "$OTG_SUBNET" "$OTG_INTERFACE"
-CreateOTGInterface "$OTG_INTERFACE" "$OTG_SUBNET" "$OTG_NETMASK"
+# make sure script runs from script's path
+SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+cd "$SCRIPT_PATH"
+
+InstallDHCPServer || Die "DHCP server install failed."
+SetOTGMode "$OTG_MODE" || Die "Set OTG mode failed."
+SetDHCPServer "$OTG_SUBNET" "$OTG_INTERFACE" || Die "Configure DHCP server failed."
+CreateOTGInterface "$OTG_INTERFACE" "$OTG_SUBNET" "$OTG_NETMASK" || "Create OTG interface failed."
+
