@@ -5,6 +5,8 @@ OTG_INTERFACE="usb0"
 OTG_NETMASK="255.255.255.0"
 OTG_ADDRESS_OCTET="1"
 
+DHCPD_CONF_PATH="/etc/dhcp"
+DHCPD_CONF_FILE="dhcpd.conf"
 
 PACKAGE=`basename $0`
 
@@ -40,6 +42,7 @@ function InstallDHCPServer()
   local pkgok=$(dpkg-query -W --showformat='${Status}\n' isc-dhcp-server|grep "install ok installed")
   if [ "" == "$pkgok" ]; then
     DEBIAN_FRONTEND=noninteractive apt-get --yes install isc-dhcp-server
+    sed -i.backup -e 's/^\s*option\s\s*domain-name/#&/' "$DHCPD_CONF_PATH/$DHCPD_CONF_FILE"
   fi
 }
 
@@ -48,6 +51,16 @@ function SetOTGMode()
 {
   local otgmode="$1"
   ./scripts/otg-set-mode.sh "$otgmode"
+}
+
+# remove DHCP server settings for current OTG interface
+function ClearDHCPServer()
+{
+  local interface="$1"
+  local otgsubnet="$(./scripts/get-otg-subnet.sh "$interface")"
+  if [ ! -z "$otgsubnet" ]; then
+    ./scripts/isc-dhcp-subnet.sh remove "$otgsubnet" "$interface"
+  fi
 }
 
 # create DHCP server settings for otg interface
@@ -88,6 +101,6 @@ cd "$SCRIPT_PATH"
 
 InstallDHCPServer || Die "DHCP server install failed."
 SetOTGMode "$OTG_MODE" || Die "Set OTG mode failed."
+ClearDHCPServer "$OTG_INTERFACE"
 SetDHCPServer "$OTG_SUBNET" "$OTG_INTERFACE" || Die "Configure DHCP server failed."
 CreateOTGInterface "$OTG_INTERFACE" "$OTG_SUBNET" "$OTG_NETMASK" || "Create OTG interface failed."
-
